@@ -102,10 +102,12 @@ terraform -chdir=terraform output dataproc_nat_ip
 terraform -chdir=terraform output dataproc_subnet
 ```
 
-Terraform enables Cloud SQL deletion protection. The instance and database
-have `prevent_destroy`; remove those protections deliberately before teardown.
-Cloud NAT has ongoing hourly and per-GiB charges, so destroy this sandbox's
-resources when the mentoring project is finished.
+This learning project allows Terraform to destroy the Cloud SQL instance and
+database. The warehouse dataset is configured to delete its contents on
+destroy, and the storage buckets use `force_destroy`, so teardown can remove
+data as well as infrastructure. Cloud NAT has ongoing hourly and per-GiB
+charges; destroy this sandbox's resources when the mentoring project is
+finished.
 
 Create or set an administrator password and create the pipeline user. Keep both
 passwords out of source control:

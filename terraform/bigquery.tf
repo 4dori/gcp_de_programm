@@ -1,8 +1,9 @@
 resource "google_bigquery_dataset" "warehouse" {
-  dataset_id  = "warehouse"
-  location    = var.region
-  description = "Fact/dim tables for both the Airbnb and AdventureWorks lanes"
-  project     = var.project_id
+  dataset_id                 = "warehouse"
+  location                   = var.region
+  description                = "Fact/dim tables for both the Airbnb and AdventureWorks lanes"
+  project                    = var.project_id
+  delete_contents_on_destroy = true
 
   depends_on = [google_project_service.apis]
 }

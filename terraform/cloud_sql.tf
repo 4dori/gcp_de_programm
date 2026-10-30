@@ -3,7 +3,7 @@ resource "google_sql_database_instance" "adventureworks" {
   project             = var.project_id
   region              = var.region
   database_version    = "POSTGRES_15"
-  deletion_protection = true
+  deletion_protection = false
 
   settings {
     tier                        = "db-custom-2-8192"
@@ -14,7 +14,7 @@ resource "google_sql_database_instance" "adventureworks" {
     disk_type                   = "PD_SSD"
     disk_autoresize             = true
     disk_autoresize_limit       = 0
-    deletion_protection_enabled = true
+    deletion_protection_enabled = false
     connector_enforcement       = "NOT_REQUIRED"
     enable_dataplex_integration = true
 
@@ -44,10 +44,6 @@ resource "google_sql_database_instance" "adventureworks" {
     }
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
-
   depends_on = [
     google_project_service.apis,
     google_compute_router_nat.dataproc,
@@ -61,7 +57,4 @@ resource "google_sql_database" "adventureworks" {
   charset   = "UTF8"
   collation = "en_US.UTF8"
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
