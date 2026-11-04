@@ -28,6 +28,24 @@ resource "google_project_iam_member" "workflows_dataproc_editor" {
   member  = "serviceAccount:${google_service_account.workflows.email}"
 }
 
+resource "google_project_iam_member" "workflows_bq_job_user" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.workflows.email}"
+}
+
+resource "google_project_iam_member" "cloudbuild_workflows_editor" {
+  project = var.project_id
+  role    = "roles/workflows.editor"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+resource "google_project_iam_member" "cloudbuild_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
 # sa-cloudbuild: minimum project-level roles needed to run terraform apply
 # Add more specific roles if tf apply reports missing permissions — do NOT grant Editor.
 resource "google_project_iam_member" "cloudbuild_service_account_user" {

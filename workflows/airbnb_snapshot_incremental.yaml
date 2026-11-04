@@ -1,0 +1,117 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - project_id: ${args.project_id}
+          - region: ${default(map.get(args, "region"), "us-central1")}
+          - mode: ${default(map.get(args, "mode"), "both")}
+          - run_date: ${args.date}
+          - deploy_bucket: ${project_id + "-deploy"}
+          - batch_parent: ${"projects/" + project_id + "/locations/" + region}
+          - dataproc_sa: ${"sa-dataproc-jobs@" + project_id + ".iam.gserviceaccount.com"}
+          - poll_interval: 20
+          - terminal_states: ["SUCCEEDED", "FAILED", "CANCELLED"]
+
+    - submit_dataproc:
+        call: http.post
+        args:
+          url: ${"https://dataproc.googleapis.com/v1/" + batch_parent + "/batches"}
+          body:
+            pysparkBatch:
+              mainPythonFileUri: ${"gs://" + deploy_bucket + "/jobs/airbnb/generate_snapshot_incremental.py"}
+              args:
+                - ${"--project=" + project_id}
+                - ${"--mode=" + mode}
+                - ${"--date=" + run_date}
+            runtimeConfig:
+              properties:
+                spark.executor.instances: "2"
+            environmentConfig:
+              executionConfig:
+                serviceAccount: ${dataproc_sa}
+          auth:
+            type: OAuth2
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"]
+        result: batch
+    - save_batch_name:
+        assign:
+          - batch_name: ${batch.body.name}
+
+    - poll_dataproc:
+        call: http.get
+        args:
+          url: ${"https://dataproc.googleapis.com/v1/" + batch_name}
+          auth:
+            type: OAuth2
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"]
+        result: batch_response
+    - save_batch_status:
+        assign:
+          - batch_state: ${batch_response.body.state}
+
+    - check_batch:
+        switch:
+          - condition: ${batch_state in terminal_states}
+            next: batch_done
+
+    - wait_batch:
+        call: sys.sleep
+        args:
+          seconds: ${poll_interval}
+        next: poll_dataproc
+
+    - batch_done:
+        switch:
+          - condition: ${batch_state != "SUCCEEDED"}
+            raise: ${"Dataproc batch ended in state " + batch_state}
+
+    - read_sql:
+        call: http.get
+        args:
+          url: ${"https://storage.googleapis.com/storage/v1/b/" + deploy_bucket + "/o/sql%2Fairbnb%2Fbuild_trusted.sql?alt=media"}
+          auth:
+            type: OAuth2
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"]
+        result: sql_file
+
+    - prepare_sql:
+        assign:
+          - query_text: ${text.replace_all(sql_file.body, "{{PROJECT_ID}}", project_id)}
+
+    - run_sql:
+        call: googleapis.bigquery.v2.jobs.query
+        args:
+          projectId: ${project_id}
+          body:
+            query: ${query_text}
+            useLegacySql: false
+            timeoutMs: 20000
+        result: query_status
+
+    - check_sql_complete:
+        switch:
+          - condition: ${query_status.jobComplete}
+            next: sql_done
+
+    - wait_sql:
+        call: sys.sleep
+        args:
+          seconds: 5
+
+    - get_sql_status:
+        call: googleapis.bigquery.v2.jobs.getQueryResults
+        args:
+          projectId: ${project_id}
+          jobId: ${query_status.jobReference.jobId}
+          location: ${region}
+        result: query_status
+        next: check_sql_complete
+
+    - sql_done:
+        switch:
+          - condition: ${"errors" in query_status and len(query_status.errors) > 0}
+            raise: '${"BigQuery SQL failed: " + json.encode_to_string(query_status.errors)}'
+
+    - done:
+        return: ${"Airbnb " + mode + " pipeline completed for " + run_date}

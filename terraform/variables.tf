@@ -19,3 +19,15 @@ variable "budget_amount_usd" {
   type        = number
   default     = 50
 }
+
+variable "github_owner" {
+  description = "GitHub account or organization that owns the Cloud Build source repository."
+  type        = string
+  default     = "4dori"
+}
+
+variable "github_repo" {
+  description = "GitHub repository connected to the Cloud Build push trigger."
+  type        = string
+  default     = "gcp_de_programm"
+}

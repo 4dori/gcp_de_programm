@@ -40,3 +40,9 @@ resource "google_storage_bucket_iam_member" "dataproc_jobs_deploy_read" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.dataproc_jobs.email}"
 }
+
+resource "google_storage_bucket_iam_member" "workflows_deploy_read" {
+  bucket = google_storage_bucket.deploy.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.workflows.email}"
+}
