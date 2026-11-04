@@ -27,6 +27,12 @@ resource "google_storage_bucket_iam_member" "dataproc_jobs_landing" {
   member = "serviceAccount:${google_service_account.dataproc_jobs.email}"
 }
 
+resource "google_storage_bucket_iam_member" "workflows_landing_read" {
+  bucket = google_storage_bucket.landing.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.workflows.email}"
+}
+
 # sa-cloudbuild → objectAdmin on the deploy bucket (copies job scripts and JDBC jar)
 resource "google_storage_bucket_iam_member" "cloudbuild_deploy" {
   bucket = google_storage_bucket.deploy.name

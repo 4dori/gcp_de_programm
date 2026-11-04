@@ -7,11 +7,17 @@ main:
           - region: ${default(map.get(args, "region"), "us-central1")}
           - mode: ${default(map.get(args, "mode"), "both")}
           - run_date: ${args.date}
+          - skip_dataproc: ${default(map.get(args, "skip_dataproc"), false)}
           - deploy_bucket: ${project_id + "-deploy"}
           - batch_parent: ${"projects/" + project_id + "/locations/" + region}
           - dataproc_sa: ${"sa-dataproc-jobs@" + project_id + ".iam.gserviceaccount.com"}
           - poll_interval: 20
           - terminal_states: ["SUCCEEDED", "FAILED", "CANCELLED"]
+
+    - check_skip_dataproc:
+        switch:
+          - condition: ${skip_dataproc}
+            next: read_sql
 
     - submit_dataproc:
         call: http.post
@@ -48,7 +54,7 @@ main:
         result: batch_response
     - save_batch_status:
         assign:
-          - batch_state: ${batch_response.body.state}
+          - batch_state: ${default(map.get(batch_response.body, "state"), "PENDING")}
 
     - check_batch:
         switch:
@@ -77,7 +83,7 @@ main:
 
     - prepare_sql:
         assign:
-          - query_text: ${text.replace_all(sql_file.body, "{{PROJECT_ID}}", project_id)}
+          - query_text: ${text.replace_all(text.decode(sql_file.body, "UTF-8"), "{{PROJECT_ID}}", project_id)}
 
     - run_sql:
         call: googleapis.bigquery.v2.jobs.query

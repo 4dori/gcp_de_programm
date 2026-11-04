@@ -28,6 +28,12 @@ resource "google_project_iam_member" "workflows_dataproc_editor" {
   member  = "serviceAccount:${google_service_account.workflows.email}"
 }
 
+resource "google_service_account_iam_member" "workflows_dataproc_service_account_user" {
+  service_account_id = google_service_account.dataproc_jobs.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.workflows.email}"
+}
+
 resource "google_project_iam_member" "workflows_bq_job_user" {
   project = var.project_id
   role    = "roles/bigquery.jobUser"
