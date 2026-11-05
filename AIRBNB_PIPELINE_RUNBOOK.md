@@ -156,7 +156,23 @@ Verify the BigQuery tables:
 bq ls --project_id=$PROJECT_ID warehouse
 ```
 
-The dataset should contain six external tables (`airbnb_snapshot_*` and `airbnb_incremental_*`) and three trusted tables (`airbnb_trusted_*`). Use `sql/airbnb/count_warehouse_rows.sql` to count rows in all nine tables. It uses `{{PROJECT_ID}}` as a placeholder; substitute the active project before submitting it.
+The dataset should contain six external tables (`airbnb_snapshot_*` and `airbnb_incremental_*`) and three trusted tables (`airbnb_trusted_*`). Run `sql/airbnb/count_warehouse_rows.sql` to count rows in all nine tables:
+
+```powershell
+$QUERY = (Get-Content sql/airbnb/count_warehouse_rows.sql -Raw).Replace("{{PROJECT_ID}}", $PROJECT_ID)
+$BODY = @{ query = $QUERY; useLegacySql = $false } | ConvertTo-Json -Compress
+$TOKEN = (gcloud auth print-access-token).Trim()
+$URI = "https://bigquery.googleapis.com/bigquery/v2/projects/$PROJECT_ID/queries"
+$RESULT = Invoke-RestMethod -Method Post -Uri $URI `
+  -Headers @{ Authorization = "Bearer $TOKEN" } `
+  -ContentType "application/json" -Body $BODY
+$RESULT.rows | ForEach-Object {
+  [pscustomobject]@{
+    table_name = $_.f[0].v
+    row_count = $_.f[1].v
+  }
+} | Format-Table -AutoSize
+```
 
 ## Retry SQL Without Re-running Dataproc
 
