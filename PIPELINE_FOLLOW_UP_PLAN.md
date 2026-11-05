@@ -8,8 +8,8 @@
 - [x] Terraform format and validation checks pass.
 - [x] Deployed `airbnb-snapshot-incremental` in `us-central1`; Workflows accepted the source.
 - [x] Connected source repository `4dori/tf_gcp_mentor` to the existing Cloud Build GitHub connection. The artifact repository `4dori/gcp_de_programm` remains unlinked.
-- [x] Created trigger `publish-program-scripts-on-main` for pushes to `main` on `tf_gcp_mentor`. It clones the public artifact repo and publishes only PySpark and SQL files to the deploy bucket.
-- [x] Manually ran the trigger successfully; the expected PySpark and SQL objects are present in GCS.
+- [x] Created trigger `publish-program-scripts-main-yaml` for pushes to `main` on `tf_gcp_mentor`, using its checked-in `cloudbuild.yaml`. It clones the public artifact repo and publishes only PySpark and SQL files to the deploy bucket.
+- [x] Manually ran the YAML-based trigger successfully; the expected PySpark and SQL objects are present in GCS.
 - [x] Uploaded the three Airbnb CSV inputs and ran the bootstrap workflow for `2026-11-04`.
 - [x] Dataproc wrote all snapshot and incremental Parquet outputs; BigQuery created all six external tables and three trusted tables.
 - [x] Added the workflow service-account permissions needed to submit Dataproc, read SQL and source objects, and create/query BigQuery tables.

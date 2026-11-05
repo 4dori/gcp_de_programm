@@ -1,46 +1,14 @@
 steps:
-  # Publish code artifacts on pushes; infrastructure changes stay separately reviewed.
-  - id: copy-pyspark-jobs
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: sh
+  - id: publish-program-scripts
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
     args:
       - -c
       - |
-        set -e
-        gcloud storage rsync --recursive pyspark-jobs gs://${PROJECT_ID}-deploy/jobs
-        gcloud storage rsync --recursive sql gs://${PROJECT_ID}-deploy/sql
-
-  # Keep workflow definitions in the deploy bucket for inspection and versioning.
-  - id: copy-workflow-yaml
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: sh
-    args:
-      - -c
-      - gcloud storage rsync --recursive workflows gs://${PROJECT_ID}-deploy/workflows
-
-  - id: deploy-existing-workflow
-    name: gcr.io/cloud-builders/gcloud
-    args:
-      - workflows
-      - deploy
-      - mentoring-pipeline
-      - --source=workflows/pipeline.yaml
-      - --service-account=sa-workflows@${PROJECT_ID}.iam.gserviceaccount.com
-      - --location=${_REGION}
-
-  - id: deploy-airbnb-workflow
-    name: gcr.io/cloud-builders/gcloud
-    args:
-      - workflows
-      - deploy
-      - airbnb-snapshot-incremental
-      - --source=workflows/airbnb_snapshot_incremental.yaml
-      - --service-account=sa-workflows@${PROJECT_ID}.iam.gserviceaccount.com
-      - --location=${_REGION}
-
-substitutions:
-  _REGION: us-central1
+        set -euo pipefail
+        git clone --depth 1 --branch main https://github.com/4dori/gcp_de_programm.git program
+        gcloud storage rsync --recursive program/pyspark-jobs gs://${PROJECT_ID}-deploy/jobs
+        gcloud storage rsync --recursive program/sql gs://${PROJECT_ID}-deploy/sql
 
 options:
   logging: CLOUD_LOGGING_ONLY
-serviceAccount: projects/${PROJECT_ID}/serviceAccounts/sa-cloudbuild@${PROJECT_ID}.iam.gserviceaccount.com
