@@ -43,7 +43,13 @@ Do not run an unreviewed full infrastructure apply from a source-push build. Thi
 
 ## Publish Code to GCS
 
-The Cloud Build trigger `publish-program-scripts-main-yaml` listens for pushes to `main` on `4dori/tf_gcp_mentor` and uses that repository's checked-in `cloudbuild.yaml`. A merged pull request produces that push event. The build config clones `4dori/gcp_de_programm` and copies its PySpark and SQL directories to the deploy bucket; it does not apply Terraform.
+### Trigger Configuration
+
+The Cloud Build trigger `publish-program-scripts-main-yaml` is configured with **Build configuration file: `cloudbuild.yaml`**. That file is checked in at the repository root of the connected source repository, `4dori/tf_gcp_mentor`.
+
+The trigger listens for pushes to `main` (`^main$`). A pull request merge to `main` creates a push event, which starts the build. Cloud Build reads and executes `tf_gcp_mentor/cloudbuild.yaml`; it does not use an inline build definition.
+
+That YAML clones `4dori/gcp_de_programm` and copies its `pyspark-jobs/` and `sql/` directories into the GCS deploy bucket. The artifact repository is the build's input, not the connected trigger source. This build does not apply Terraform.
 
 To publish an updated program:
 
